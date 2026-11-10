@@ -2,17 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Notícias e Rádio</title>
+  <title>Notícias do Brasil - G1</title>
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
       font-family: sans-serif;
-      background-color: #111;
     }
 
     #noticias {
@@ -26,25 +20,25 @@
       overflow: hidden;
       display: flex;
       align-items: center;
+      padding-left: 10px;
+      font-size: 16px;
       z-index: 999;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    #conteudo {
+      margin-top: 50px;
+      padding: 20px;
     }
 
     .ticker {
       white-space: nowrap;
-      display: inline-block;
-      animation: rodar 120s linear infinite; /* Aumentei para 120s para dar tempo de ler mais notícias */
-    }
-
-    .ticker:hover {
-      animation-play-state: paused;
+      animation: rodar 90s linear infinite;
     }
 
     .ticker a {
       color: white;
       text-decoration: none;
-      margin-right: 40px;
-      font-weight: 500;
+      margin-right: 30px;
     }
 
     .ticker a:hover {
@@ -52,74 +46,56 @@
     }
 
     @keyframes rodar {
-      0% { transform: translateX(100vw); }
+      0% { transform: translateX(100%); }
       100% { transform: translateX(-100%); }
-    }
-
-    iframe {
-      position: absolute;
-      top: 40px;
-      left: 0;
-      width: 100%;
-      height: calc(100% - 40px);
-      border: none;
     }
   </style>
 </head>
 <body>
 
   <div id="noticias">
-    <div class="ticker" id="ticker">Carregando notícias de várias fontes...</div>
+    <div class="ticker" id="ticker">Carregando notícias...</div>
   </div>
 
-  <iframe src="https://player.srvsh.com.br/player-web/7342"></iframe>
+  
 
   <script>
-    // ADICIONE OU REMOVA OS RSS AQUI:
-    const rssFeeds = [
-      'https://g1.globo.com/dynamo/brasil/rss2.xml',
-      'https://tecnoblog.net/feed/', // Exemplo de tecnologia
-      'https://ge.globo.com/dynamo/futebol/rss2.xml' // Exemplo de esportes
-    ];
+    async function carregarRSS() {
+      const url = 'https://api.rss2json.com/v1/api.json?rss_url=https://g1.globo.com/dynamo/brasil/rss2.xml';
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const ticker = document.getElementById('ticker');
+        ticker.innerHTML = ''; // Limpa conteúdo anterior
 
-    async function carregarMultiplosRSS() {
-      const ticker = document.getElementById('ticker');
-      ticker.innerHTML = ''; // Limpa o aviso de carregamento
-
-      for (const rssUrl of rssFeeds) {
-        try {
-          const urlProxy = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
-          const res = await fetch(urlProxy);
-          const data = await res.json();
-          
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(data.contents, "text/xml");
-          const items = xml.querySelectorAll("item");
-
-          items.forEach(item => {
-            const titleNode = item.querySelector("title");
-            const linkNode = item.querySelector("link");
-
-            if (titleNode && linkNode) {
-              const link = document.createElement('a');
-              link.href = linkNode.textContent.trim();
-              link.textContent = titleNode.textContent.trim();
-              link.target = '_blank';
-              ticker.appendChild(link);
-            }
-          });
-        } catch (err) {
-          console.error('Erro ao carregar o feed:', rssUrl);
-        }
-      }
-
-      // Se nenhum feed carregar por falha de rede
-      if (ticker.children.length === 0) {
-        ticker.textContent = '⚠️ Não foi possível carregar as notícias.';
+        data.items.forEach(item => {
+          const link = document.createElement('a');
+          link.href = item.link;
+          link.textContent = item.title;
+          link.target = '_blank'; // Abre em nova aba
+          ticker.appendChild(link);
+        });
+      } catch (err) {
+        document.getElementById('ticker').textContent = 'Erro ao carregar notícias.';
       }
     }
 
-    carregarMultiplosRSS();
+    carregarRSS();
   </script>
+ <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+
+<iframe src="https://player.srvsh.com.br/player-web/7342" frameborder="0" width="100%" height="100%"></iframe>
 </body>
 </html>
